@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+
+  minio:
+    hostname: minio
+    image: minio/minio
+    ports:
+      - "9000:9000"
+    volumes:
+      - 'minio:/data'
+    env_file: .env
+    command: server /data
+    restart: always
+
+  rabbitmq:
+    image: 'bitnami/rabbitmq:latest'
+    ports:
+      - '4369:4369'
+      - '5671:5671'
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbit:/bitnami
+    env_file: .env
+    restart: always
+    
+  init:
+    hostname: init
+    build: ./init
+    env_file: .env
+    command: ["./wait-for-it.sh" , "rabbitmq:15672" , "--strict" , "--timeout=300" , "--" , "sh" , "script.sh"]
+    restart: on-failure
+    depends_on: ['rabbitmq']
+
+volumes:
+  minio:
+  rabbit:
